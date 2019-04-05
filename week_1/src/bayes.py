@@ -9,6 +9,7 @@ t0 = time()
 # mảng testData gồm 2 phần tử tương dứng là data và label
 # mỗi phàn tử là mảng một chiều [label, content]
 def loadData(dataPath):
+    print('Loading {}'.format(dataPath))
     data = []
     for f in os.listdir(dataPath):
         filePath = dataPath + f
@@ -21,6 +22,7 @@ def loadData(dataPath):
 
 # tiền xử lý dữ liệu 
 def preprocess(data):
+    print('Preprocessing...')
     for doc in data:
         content = doc[1]
         content = re.sub('[0-9]|[.“:,;”/)()?%\"\'\\+*&-]', '', content)
@@ -29,6 +31,7 @@ def preprocess(data):
 
 # tạo từ điển
 def buildDict(data):
+    print('Building dictionary...')
     word_dict = {}
     for doc in data:
         content = doc[1]
@@ -43,15 +46,19 @@ def buildDict(data):
     # loại bỏ các stopword theo số từ 
     stopwords = []
     for word in word_dict:
-        if (word_dict[word] > 5000  or (word_dict[word] == 1 and '_' not in word)):
+        if (word_dict[word] > 1000  or (word_dict[word] == 1)):
             stopwords.append(word)
-    
+    # with open('src/stopwords.txt', mode = 'w', encoding = 'utf-8') as stw_file:
+    #     for word in stopwords:
+    #         stw_file.write(word + '\n')
+
     for word in stopwords:
         word_dict.pop(word)
 
     return word_dict
 
 def train(data, word_dict):
+    print('Training...')
     vector_dict = {}
     alpha = 0.001
     
@@ -79,6 +86,7 @@ def train(data, word_dict):
 
 # phân loại tập test    
 def test(testData, word_dict, vector_dict):
+    print('Testing...')
     data = ''
     labels = ''
     for i in testData:
@@ -90,20 +98,24 @@ def test(testData, word_dict, vector_dict):
     data = re.sub('[0-9]|[.“:,;”/)()?%\"\'\\+*&-]', '', data)
     data = data.lower()
 
-    labels = labels.split('\n')
-    lines = data.split('\n')
+    labels = labels.split('\n')[0:6500]
+    lines = data.split('\n')[0:6500]
     count_true = 0
+    score_detail = dict.fromkeys(labels, 0) 
+    labels_detail = dict.fromkeys(labels, 0)
 
     for i in range(len(lines)):
         line = lines[i]
+        true_label = labels[i]
+
         words = [word for word in line.split(' ') if word != '' and word in word_dict]
-        vector = dict.fromkeys(word_dict, 0)
+        vector = dict.fromkeys(words, 0)
         for word in words:
             vector[word] += 1
         
         label_max = '1'
         max_p = 0
-
+        
         for label in vector_dict:
             vector_dict_label = vector_dict[label]
             p = 1
@@ -116,14 +128,25 @@ def test(testData, word_dict, vector_dict):
             if (p > max_p):
                 max_p = p
                 label_max = label
-            
         
-        print("Dự đoán: {} - Thực tế: {}".format(label_max, labels[i]))
-        if (label_max == labels[i]):
+        # print("Dự đoán: {} - Thực tế: {}".format(label_max, labels[i]))
+        
+        if (label_max == true_label):
             count_true += 1
+            score_detail[true_label] += 1
+        
+        labels_detail[true_label] +=1
+        
+        # print("Đúng: {}. Tổng số: {}. Tỷ lệ đúng: {}".format(count_true, i+1, count_true / (i+1)))
+    
+    # Tính độ chính xác:
+    accuracy_score = count_true / len(lines)
+    print("Accuracy score: {}".format(accuracy_score))
+    # score chi tiết:
+    for label in labels_detail:
+        score_detail[label] /= labels_detail[label]
 
-        print("Đúng: {}. Tổng số: {}. Tỷ lệ đúng: {}".format(count_true, i+1, count_true / (i+1)))
-
+    print("Detail: {}".format(score_detail))
 
 
 trainData = loadData('classify_data/train/')
@@ -136,5 +159,3 @@ vector_dict = train(trainData, word_dict)
 test(testData, word_dict, vector_dict)
 print("Thời gian: {}".format(time() - t0))
 
-# ĐỘ CHÍNH XÁC: 0.81 alpha = 1
-# THỜI GIAN CHẠY: 15m

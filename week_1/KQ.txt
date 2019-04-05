@@ -1,0 +1,33 @@
+SVM: Thời gian 25s
+    LinearSVC: 0.88
+        {1: 0.574, 2: 0.894, 3: 0.988, 4: 0.98, 5: 0.796, 6: 0.864, 7: 0.932, 8: 0.94, 9: 0.92, 10: 0.942, 11: 0.852, 12: 0.894, 13: 0.902}
+
+Bayses: Thời gian 20s 
+        0.847
+
+    *** Cố định alpha = 0.00001 (hệ số làm mịn, dòng 63). Chỉnh stopwords theo số lần xuất hiện của từ(dòng 49):
+        + word_dict[word] > 500  or (word_dict[word] < 100) : 0.806
+        + word_dict[word] > 1000  or (word_dict[word] < 100) : 0.816
+        + word_dict[word] > 1000  or (word_dict[word] < 50) : 0.826
+        + word_dict[word] > 1000  or (word_dict[word] < 10) : 0.838
+        + word_dict[word] > 1000  or (word_dict[word] < 5) : 0.843
+        + word_dict[word] > 1000  or (word_dict[word] == 1) : 0.846 ***************** 
+            Detail: {'1': 0.556, '2': 0.874, '3': 0.976, '4': 0.918, '5': 0.732, '6': 0.866, '7': 0.886, '8': 0.894, '9': 0.856, '10': 0.938, '11': 0.802, '12': 0.86, '13': 0.844}
+        + word_dict[word] > 2000  or (word_dict[word] == 1) : 0.842
+        + word_dict[word] > 5000  or (word_dict[word] == 1) : 0.82
+        + word_dict[word] > 10000  or (word_dict[word] == 1) : 0.803
+        + word_dict[word] > 500  or (word_dict[word] == 1) : 0.845
+        + word_dict[word] > 200  or (word_dict[word] == 1) : 0.843
+        + word_dict[word] > 100  or (word_dict[word] == 1) : 0.827
+
+    ***  CỐ định khoảng của stopwords: word_dict[word] > 1000  or (word_dict[word] == 1) (dòng 49). Điều chỉnh alpha:
+        + alpha = 1000: 0.747
+        + alpha = 100: 0.771
+        + alpha = 1: 0.831
+        + alpha = 0.1: 0.842
+        + alpha = 0.001: 0.847 *********************
+            {'1': 0.548, '2': 0.874, '3': 0.976, '4': 0.918, '5': 0.728, '6': 0.872, '7': 0.894, '8': 0.904, '9': 0.862, '10': 0.94, '11': 0.8, '12': 0.87, '13': 0.83}
+        + alpha = 0.00001: 0.846
+        + alpha = 0: 0.628
+    
+

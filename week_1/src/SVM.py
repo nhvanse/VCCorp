@@ -1,13 +1,15 @@
 import os
-import re
-import numpy as np
-# import pandas as pd
-# import matplotlib.pyplot as plt
+import re 
+from time import time
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn import svm
+from sklearn.svm import LinearSVC
 from sklearn.metrics import accuracy_score
 
+vocal = {}
+t0 = time()
+
 def loadData(dataPath):
+    print('Loading data...')
     data = []
     for f in os.listdir(dataPath):
         filePath = dataPath + f
@@ -17,101 +19,88 @@ def loadData(dataPath):
             data.append([label, content])
     
     return data
+
 def preprocess(data):
+    print('Preprocessing...')
     for doc in data:
         content = doc[1]
         content = re.sub('[0-9]|[.“:,;”/)()?%\"\'\\+*&-]', '', content)
         content = content.lower()
         doc[1] = content
 
-# tạo từ điển
-def buildDict(data):
-    word_dict = {}
+def computeTfidf(data):
+    print('Computing tf-idf...')
+    corpus = []
+    labels = []
     for doc in data:
         content = doc[1]
         lines = content.split('\n')
+        lines = lines[0:2000]
         for line in lines:
-            words = [i for i in line.split(' ') if i != '']
-            for word in words:
-                if word in word_dict:
-                    word_dict[word] += 1
-                else:
-                    word_dict[word] = 1
-    # loại bỏ các stopword theo số từ 
-    stopwords = []
-    for word in word_dict:
-        if (word_dict[word] > 5000  or (word_dict[word] == 1 and '_' not in word)):
-            stopwords.append(word)
-    
-    for word in stopwords:
-        word_dict.pop(word)
+            corpus.append(line)
+            labels.append(int(doc[0]))
 
-    return word_dict
+    with open('src/stopwords.txt', mode = 'r', encoding = 'utf-8') as stopwords_file:
+        stopwords = stopwords_file.read()
+        stopwords = [word for word in stopwords.split('\n') if word != '']
+    
+    vectorizer = TfidfVectorizer(stop_words=stopwords)
+    x = vectorizer.fit_transform(corpus)
 
-def buildVector (data, word_dict):
-    x_vector = []
-    y_vector = []
-    for doc in data:
-        content = doc[1]
-        lines = content.split('\n')
-        
-        for line in lines:
-            words_in_line = dict.fromkeys(word_dict, 0)
-            words = [word for word in line.split(' ') if word != '' and word in word_dict]
-            
-            for word in words:
-                words_in_line[word] += 1
-                
-            vector = words_in_line.values()
-            vector = list(vector)
-            
-            x_vector.append(vector)
-            y_vector.append(int(doc[0]))
-            
-    return x_vector, y_vector
+    global vocal
+    vocal = vectorizer.vocabulary_
 
-def test(cfl, testData, word_dict, x_vector, y_vector):
-    data = ''
-    labels = ''
+    return x, labels
+
+def test(cfl, x_train, y_train):
+    print('Testing...')
+    # tính tfidf của từng dòng văn bản 
+    testData = open('classify_data/test/data.txt', encoding = 'utf-8').read()
+    testData = re.sub('[0-9]|[.“:,;”/)()?%\"\'\\+*&-]', '', testData)
+    testData = testData.lower()
+    lines = testData.split('\n')[0:6500]
+
+    corpus  = []
+    for line in lines:
+        corpus.append(line)
+
+    with open('src/stopwords.txt', mode = 'r', encoding = 'utf-8') as stopwords_file:
+        stopwords = stopwords_file.read()
+        stopwords = [word for word in stopwords.split('\n') if word != '']
     
-    x_test = []
-    y_test = []
+    vectorizer = TfidfVectorizer(stop_words=stopwords, vocabulary=vocal)
+    x_test = vectorizer.fit_transform(corpus)
+    # predict label cảu các văn bản 
+    y_pre = cfl.predict(x_test)
+
+    # tính độ chính xác 
+    testLabel = open('classify_data/test/label.txt', encoding = 'utf-8').read()
+    testLabel = testLabel.split('\n')
+    y_test = [int(i) for i in testLabel[0:6500]]
+
+    score = accuracy_score(y_test, y_pre)
+    print('Accuracy score: {}'.format(score))
     
-    for i in testData:
-        if i[0] == 'data':
-            data = i[1]
-        elif i[0] == 'label':
-            labels = i[1]
-            
-    data = re.sub('[0-9]|[.“:,;”/)()?%\"\'\\+*&-]', '', data)
-    data = data.lower()
+    # tính độ chính xác cho từng label.
+    score_detail = dict.fromkeys(y_test, 0)
+    for i in range(len(y_test)):
+        label = y_test[i]
+        if (y_pre[i] == label):
+            score_detail[label] += 1
     
-    labels = labels.split('\n')
-    y_test = [int(label) for i in labels]
-    lines = data.split('\n')
-    words_in_line = dict.fromkeys(word_dict, 0)
+    for label in score_detail:
+            score_detail[label] /= 500
     
-    for i in range(len(lines)):
-        line = lines[i]
-        label = labels[i]
-        words = [word for word in line.split(' ') if word in word_dict and word != '']
-        words_in_line = dict.fromkeys(word_dict, 0)
-        
-        for word in words:
-            words_in_line[word] += 1
-            
-        vector = words_in_line.values()
-        x_test.append(vector)
-    
-    cfl.predict(x_test)
+    print('Detail: {}'.format(score_detail))
+
 
 trainData = loadData('classify_data/train/')
-testData = loadData('classify_data/test/')
-
 preprocess(trainData)
-word_dict = buildDict(trainData)
 
-x_train, y_train = buildVector(trainData, word_dict)
+x_train, y_train = computeTfidf(trainData)
 
-cfl = svm.LinearSVC(C=1.0)
+cfl = LinearSVC()
 cfl.fit(x_train, y_train)
+test(cfl, x_train, y_train)
+
+print('Time: {} s'.format(time() - t0))
