@@ -2,7 +2,7 @@ SVM: Thời gian 25s
     LinearSVC: 0.88
         {1: 0.574, 2: 0.894, 3: 0.988, 4: 0.98, 5: 0.796, 6: 0.864, 7: 0.932, 8: 0.94, 9: 0.92, 10: 0.942, 11: 0.852, 12: 0.894, 13: 0.902}
 
-Bayes: Thời gian 20s 
+Bayses: Thời gian 20s 
         0.847
 
     *** Cố định alpha = 0.00001 (hệ số làm mịn, dòng 63). Chỉnh stopwords theo số lần xuất hiện của từ(dòng 49):
