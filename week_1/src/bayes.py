@@ -60,7 +60,7 @@ def buildDict(data):
 def train(data, word_dict):
     print('Training...')
     vector_dict = {}
-    alpha = 0.001
+    alpha = 0.00001
     
     for doc in data:
         label = doc[0]

@@ -1,0 +1,17 @@
+*** RandomForestClassifier()
+    + n_estimators = 1: 0.65, 20s
+    + n_estimators = 10: 0.832
+    + n_estimators = 50: 0.868, 65s
+    + n_estimators = 100: 0.874 , 111s
+    + n_estimators = 200: 0.873, 207s
+    + n_estimators = 500: 0.876, 518s
+    
+*** BaggingClassifier(): base_estimator = DecisionClassifier()
+    + n_estimators = 1: 0.716, 52s
+    + n_estimators = 10: 0.825, 345s
+    + n_estimators = 100: 0.844, 3310s = 55m10'
+
+*** BaggingClassifier(): base_estimator = LinearSVC()
+    + n_estimators = 1: 0.89, 29s
+    + n_estimators = 10: 0.89, 69s
+    

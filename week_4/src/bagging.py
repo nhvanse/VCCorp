@@ -3,8 +3,11 @@ import re
 from time import time
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import LinearSVC
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.metrics import accuracy_score
+
+from sklearn import model_selection
+from sklearn.ensemble import BaggingClassifier
+from sklearn.tree import DecisionTreeClassifier
+
 
 vocal = {}
 t0 = time()
@@ -53,8 +56,8 @@ def computeTfidf(data):
 
     return x, labels
 
-def test(cfl, x_train, y_train):
-    print('Testing...')
+def processTestData():
+    print("Processing test data...")
     # tính tfidf của từng dòng văn bản 
     testData = open('classify_data/test/data.txt', encoding = 'utf-8').read()
     testData = re.sub('[0-9]|[.“:,;”/)()?%\"\'\\+*&-]', '', testData)
@@ -71,82 +74,50 @@ def test(cfl, x_train, y_train):
     
     vectorizer = TfidfVectorizer(stop_words=stopwords, vocabulary=vocal)
     x_test = vectorizer.fit_transform(corpus)
-    # predict label cảu các văn bản 
-    y_pre = cfl.predict(x_test)
+    
 
     # tính độ chính xác 
     testLabel = open('classify_data/test/label.txt', encoding = 'utf-8').read()
     testLabel = testLabel.split('\n')
     y_test = [int(i) for i in testLabel[0:6500]]
+    return x_test, y_test
+    
+def testBoost():
+    from sklearn.ensemble import AdaBoostClassifier
+    from sklearn.ensemble import GradientBoostingClassifier
+    from sklearn.ensemble import VotingClassifier
+    
+    global x_test, y_test, x_train, y_train
 
-    score = accuracy_score(y_test, y_pre)
-    print('Accuracy score: {}'.format(score))
-    
-    # tính độ chính xác cho từng label.
-    score_detail = dict.fromkeys(y_test, 0)
-    for i in range(len(y_test)):
-        label = y_test[i]
-        if (y_pre[i] == label):
-            score_detail[label] += 1
-    
-    for label in score_detail:
-            score_detail[label] /= 500
-    
-    print('Detail: {}'.format(score_detail))
+    ada_boost = AdaBoostClassifier()
+    grad_boost = GradientBoostingClassifier()
+
+    # boost_array = [ada_boost, grad_boost]
+    eclf = VotingClassifier([ada_boost, grad_boost], voting='hard')
+    labels = ['Ada Boost', 'Grad Boost', 'vote']
+    for clf, label in zip([ada_boost, grad_boost, eclf], labels):
+        clf.fit(x_train, y_train)
+        score = clf.score(x_test, y_test)
+        print("score: {0:.3f} [{1}]".format(score,label))
 
 
 trainData = loadData('classify_data/train/')
 preprocess(trainData)
-
 x_train, y_train = computeTfidf(trainData)
+x_test, y_test = processTestData()
 
-cfl = LinearSVC()
-cfl.fit(x_train, y_train)
-test(cfl, x_train, y_train)
-# 
-
-
-
-from sklearn import model_selection
-# from sklearn.ensemble import BaggingClassifier
-# from sklearn.tree import DecisionTreeClassifier
-
-
-# print('Testing...')
-# # tính tfidf của từng dòng văn bản 
-# testData = open('classify_data/test/data.txt', encoding = 'utf-8').read()
-# testData = re.sub('[0-9]|[.“:,;”/)()?%\"\'\\+*&-]', '', testData)
-# testData = testData.lower()
-# lines = testData.split('\n')[0:6500]
-
-# corpus  = []
-# for line in lines:
-#     corpus.append(line)
-
-# with open('src/stopwords.txt', mode = 'r', encoding = 'utf-8') as stopwords_file:
-#     stopwords = stopwords_file.read()
-#     stopwords = [word for word in stopwords.split('\n') if word != '']
-
-# vectorizer = TfidfVectorizer(stop_words=stopwords, vocabulary=vocal)
-# x_test = vectorizer.fit_transform(corpus)
-# testLabel = open('classify_data/test/label.txt', encoding = 'utf-8').read()
-# testLabel = testLabel.split('\n')
-# y_test = [int(i) for i in testLabel[0:6500]]
+print("Classifying....")
+t1 = time()
+# cfl = BaggingClassifier(base_estimator=LinearSVC(), n_estimators=10, max_samples=0.1, n_jobs=-1)
+# from sklearn.ensemble import RandomForestClassifier
+# # cfl =RandomForestClassifier(n_estimators=50)
+# cfl.fit(x_train, y_train)
+# score = cfl.score(x_test, y_test)
+# print("\tacc: {}".format(score))
 
 
+testBoost()
+print("\tTime: {}".format(time() - t1))
 
-# # cfl = DecisionTreeClassifier(max_features=None)
-# # cfl = cfl.fit(x_train, y_train)
-# # y_pre = cfl.predict(x_test)
-# # print(accuracy_score(y_test, y_pre)) #0.75 58s
+print('\nTotal Time: {} s'.format(time() - t0))
 
-# # cfl = MultinomialNB(alpha=0.001)
-# # cfl = cfl.fit(x_train, y_train)
-# # y_pre = cfl.predict(x_test)
-# # print(accuracy_score(y_test, y_pre)) #0.75 58s
-
-# cfl = LinearSVC()
-# cfl = cfl.fit(x_train, y_train)
-# y_pre = cfl.predict(x_test)
-# print(accuracy_score(y_test, y_pre)) #0.88 23s
-# print('Time: {} s'.format(time() - t0))

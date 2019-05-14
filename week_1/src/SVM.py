@@ -67,7 +67,7 @@ def test(cfl, x_train, y_train):
     with open('src/stopwords.txt', mode = 'r', encoding = 'utf-8') as stopwords_file:
         stopwords = stopwords_file.read()
         stopwords = [word for word in stopwords.split('\n') if word != '']
-    
+    pickle.dump(stopwords, open('stopwords', 'wb'))
     vectorizer = TfidfVectorizer(stop_words=stopwords, vocabulary=vocal)
     x_test = vectorizer.fit_transform(corpus)
     # predict label cảu các văn bản 
@@ -101,6 +101,8 @@ x_train, y_train = computeTfidf(trainData)
 
 cfl = LinearSVC()
 cfl.fit(x_train, y_train)
+import pickle
+pickle.dump(cfl, open('model', 'wb'))
 test(cfl, x_train, y_train)
-
+pickle.dump(vocal, open('vocal', 'wb'))
 print('Time: {} s'.format(time() - t0))
